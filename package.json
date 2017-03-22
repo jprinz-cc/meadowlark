@@ -4,6 +4,7 @@
   "description": "Meadowlark Travel site",
   "main": "meadowlark.js",
   "scripts": {
+    "start": "meadowlark.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Alfred E. Neuman",
