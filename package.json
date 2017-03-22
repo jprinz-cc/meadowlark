@@ -4,11 +4,15 @@
   "description": "Meadowlark Travel site",
   "main": "meadowlark.js",
   "scripts": {
-    "start": "meadowlark.js",
+    "start": "node meadowlark.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Alfred E. Neuman",
   "license": "MIT",
+  "repository": {
+        "type": "git",
+        "url": "https://github.com/jprinz-cc/meadowlark.git"
+  },
   "dependencies": {
     "express": "^4.15.2",
     "express-handlebars": "^3.0.0"
