@@ -5,7 +5,7 @@ var app = express();
 var fortune = require('./lib/fortune.js');
 
 // set up handlebars view engine
-var handlebars = require('express-handlebars').create({ defaultLayout:'main'});
+var handlebars = require('express-handlebars').create({ defaultLayout:'main' });
 
 app.engine('handlebars', handlebars.engine);
 app.set('view engine', 'handlebars');
@@ -29,17 +29,38 @@ app.get('/', function(req, res){
 });
 
 
-app.get('/about', function(req, res){
-    res.render('about', { fortune: fortune.getFortune(),
-                        pageTestScript: '/qa/tests-about.js'
-                        });
+// Health check for Openshift
+app.get('/health', function(req, res){
+    res.status(200);
+    res.render('health');
 });
+
+
+app.get('/about', function(req, res){
+    res.render('about', {
+        fortune: fortune.getFortune(),
+        pageTestScript: '/qa/tests-about.js'
+    });
+});
+
+
+app.get('/tours/hood-river', function(req, res){
+    res.render('tours/hood-river');
+});
+
+
+app.get('/tours/request-group-rate', function(req, res){
+    res.render('tours/request-group-rate');
+});
+
+
 
 // custom 404 page
 app.use(function(req, res){
     res.status(404);
     res.render('404');
 });
+
 
 //custom 500 page
 app.use(function(err, req, res, next){
