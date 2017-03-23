@@ -10,11 +10,15 @@
   "author": "Alfred E. Neuman",
   "license": "MIT",
   "repository": {
-        "type": "git",
-        "url": "https://github.com/jprinz-cc/meadowlark.git"
+    "type": "git",
+    "url": "https://github.com/jprinz-cc/meadowlark.git"
   },
   "dependencies": {
     "express": "^4.15.2",
     "express-handlebars": "^3.0.0"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "mocha": "^3.2.0"
   }
 }
