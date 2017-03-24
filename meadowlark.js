@@ -11,8 +11,8 @@ app.engine('handlebars', handlebars.engine);
 app.set('view engine', 'handlebars');
 
 
-app.set('port', process.env.NODE_PORT || 3000);
-app.set('ip', process.env.NODE_IP || 'localhost');
+app.set('port', process.env.PORT || 3000);
+app.set('ip', process.env.IP || 'localhost');
 
 app.use(express.static(__dirname + '/public'));
 
