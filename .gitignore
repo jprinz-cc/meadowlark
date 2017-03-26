@@ -4,3 +4,6 @@ node_modules
 # put any other files you don't want to check in here,
 # such as .DS_Store (OSC), *.bak, etc.
 /node_modules/
+*.njsproj
+*.snl
+/.vs/
