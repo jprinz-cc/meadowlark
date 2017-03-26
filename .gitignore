@@ -7,3 +7,6 @@ node_modules
 *.njsproj
 *.snl
 /.vs/
+/bin/
+/obj/
+.ntcs_analysis.dat
