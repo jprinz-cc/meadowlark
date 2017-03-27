@@ -1,13 +1,19 @@
 var express = require('express');
+var bodyParser = require('body-parser');
+
+// Custom scripts
+var fortune = require('./lib/fortune.js');
+var dayOfWeek = require('./lib/dayOfWeek.js');
+
 
 // set up handlebars view engine
 var handlebars = require('express-handlebars').create({
     defaultLayout: 'main'
 });
 
-// Custom scripts
-var fortune = require('./lib/fortune.js');
-var dayOfWeek = require('./lib/dayOfWeek.js');
+
+var urlEncodedParser = bodyParser.urlencoded({ extended: false });
+
 
 
 
@@ -63,6 +69,11 @@ app.get('/about', function (req, res) {
 });
 
 
+app.get('/thank-you', function (req, res){
+    res.render('thank-you');
+});
+
+
 app.get('/tours/hood-river', function (req, res) {
     res.render('tours/hood-river');
 });
@@ -76,6 +87,18 @@ app.get('/tours/oregon-coast', function (req, res) {
 app.get('/tours/request-group-rate', function (req, res) {
     res.render('tours/request-group-rate');
 });
+
+
+app.post('/process-contact', urlEncodedParser, function(req, res){
+    console.log('Recieved contact from '+ req.body.name +
+               ' <' + req.body.email + '>');
+
+    // save to database...
+
+    res.redirect(303, '/thank-you');
+
+
+})
 
 
 
