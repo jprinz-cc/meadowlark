@@ -14,6 +14,8 @@ var handlebars = require('express-handlebars').create({
 
 var urlEncodedParser = bodyParser.urlencoded({ extended: false });
 
+var date = new Date();
+
 
 
 
@@ -90,12 +92,23 @@ app.get('/tours/request-group-rate', function (req, res) {
 
 
 app.post('/process-contact', urlEncodedParser, function(req, res){
+
+    var conName = req.body.name;
+    var curTime = date.toString();
+
     console.log('Recieved contact from '+ req.body.name +
-               ' <' + req.body.email + '>');
+               ' <' + req.body.email + '> ' + curTime);
+
+
 
     // save to database...
 
-    res.redirect(303, '/thank-you');
+    //res.redirect(303, '/thank-you');
+    res.status(303);
+    res.render('thank-you', {
+        timeStamp: curTime,
+        contactName: conName
+    });
 
 
 })
