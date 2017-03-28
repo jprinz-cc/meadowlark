@@ -7,9 +7,10 @@
 	<input type="submit" value="Submit">
 </form>
 
-<script>
-    $(document).ready(function(){
-        $('input[name="referrer"]').val(document.referrer);
-    });
-</script>
-
+{{#section 'jquery'}}
+    <script>
+        $(document).ready(function(){
+            $('input[name="referrer"]').val(document.referrer);
+        });
+    </script>
+{{/section}}

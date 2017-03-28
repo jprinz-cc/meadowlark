@@ -1,34 +1,45 @@
 var express = require('express');
+var app = express();
+
+app.set('port', process.env.PORT || 3000);
+app.set('ip', process.env.IP || 'localhost');
+app.disable('x-powered-by');
+
+
+//Requires
 var bodyParser = require('body-parser');
 
 // Custom scripts
 var fortune = require('./lib/fortune.js');
 var dayOfWeek = require('./lib/dayOfWeek.js');
+var copyrightYear = require('./lib/copyrightYear.js');
+var getWeatherData = require('./lib/getWeatherData.js');
 
 
 // set up handlebars view engine
 var handlebars = require('express-handlebars').create({
-    defaultLayout: 'main'
+    defaultLayout: 'main',
+    helpers: {
+        copyrightYear: copyrightYear.getCurYear(),
+        section: function(name, options){
+            if(!this._sections) this._sections = {};
+            this._sections[name] = options.fn(this);
+            return null;
+        }
+    }
 });
+app.engine('handlebars', handlebars.engine);
+app.set('view engine', 'handlebars');
 
 
+// Global Variables
 var urlEncodedParser = bodyParser.urlencoded({ extended: false });
 
 var date = new Date();
 
 
 
-
-var app = express();
-
-app.engine('handlebars', handlebars.engine);
-app.set('view engine', 'handlebars');
-
-app.disable('x-powered-by');
-
-app.set('port', process.env.PORT || 3000);
-app.set('ip', process.env.IP || 'localhost');
-
+// Startup
 app.use(express.static(__dirname + '/public'));
 
 
@@ -39,24 +50,24 @@ app.use(function (req, res, next) {
 });
 
 
-// Health check for Openshift
-app.get('/health', function (req, res) {
-    res.status(200);
-    res.render('health');
-});
+app.use(function(req, res, next){
+    if(!res.locals.partials) res.locals.partials = {};
+    res.locals.partials.weatherContext = getWeatherData.getWeatherData();
+    next();
+})
 
-// Display header info
-app.get('/headers', function (req, res) {
-    res.set('Content-Type', 'text/plain');
-    var s = '';
-    for (var name in req.headers) {
-        s += name + ': ' + req.headers[name] + '\n';
-    };
-    res.send(s);
-});
+
+
 
 // ##Routes
 app.get('/', function (req, res) {
+    res.render('home', {
+        dayOfWeek: dayOfWeek.getDayOfWeek()
+    });
+});
+
+
+app.get('/home', function (req, res) {
     res.render('home', {
         dayOfWeek: dayOfWeek.getDayOfWeek()
     });
@@ -70,10 +81,6 @@ app.get('/about', function (req, res) {
     });
 });
 
-
-app.get('/thank-you', function (req, res){
-    res.render('thank-you');
-});
 
 
 app.get('/tours/hood-river', function (req, res) {
@@ -91,26 +98,82 @@ app.get('/tours/request-group-rate', function (req, res) {
 });
 
 
+app.get('/tours/tours-info', function (req, res) {
+    res.render('tours/tours-info', {
+        currency: {
+            name: 'Canadian dollars',
+            abbrev: 'CDN'
+        },
+        tours: [
+            {
+                name: 'Hood River',
+                price: '$99.95'
+            },
+            {
+                name: 'Oregon Coast',
+                price: '$159.95'
+            }
+        ],
+        specialsUrl: '/january-specials',
+        currencies: ['USD', 'CDN', 'BTC']
+    });
+});
+
+
+app.get('/january-specials', function(req, res){
+    res.render('tours/january-specials');
+});
+
+
 app.post('/process-contact', urlEncodedParser, function(req, res){
 
     var conName = req.body.name;
     var curTime = date.toString();
 
-    console.log('Recieved contact from '+ req.body.name +
-               ' <' + req.body.email + '> ' + curTime);
-
-
+    console.log('Recieved contact from '+ req.body.name + ' <' + req.body.email + '> ' + curTime);
 
     // save to database...
 
-    //res.redirect(303, '/thank-you');
+    //res.redirect(303, '/thank-you');  //old code
     res.status(303);
     res.render('thank-you', {
         timeStamp: curTime,
         contactName: conName
     });
+})
 
 
+app.get('/thank-you', function (req, res){
+    res.render('thank-you');
+});
+
+
+
+
+// Test pages
+// Health check for Openshift
+app.get('/health', function (req, res) {
+    res.status(200);
+    res.render('health', {
+        layout: 'newpage'
+    });
+});
+
+
+// Display header info
+app.get('/headers', function (req, res) {
+    res.set('Content-Type', 'text/plain');
+    var s = '';
+    for (var name in req.headers) {
+        s += name + ': ' + req.headers[name] + '\n';
+    };
+    res.send(s);
+});
+
+
+// jQuery test page
+app.get('/jquery-test', function (req, res){
+    res.render('jquery-test');
 })
 
 

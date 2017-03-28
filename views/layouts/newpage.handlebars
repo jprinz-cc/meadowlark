@@ -1,27 +1,20 @@
 <!doctype html>
+<!-- This is a test layout page -->
 <html lang="en">
     <head>
         <meta charset="utf-8">
-        <title>Meadowlark Travel</title>
+        <title>The NEW Meadowlark Travel site</title>
 
-        {{!handlebars context code}}
-        {{{_sections.head}}}
-
-        {{!Sets up the mocha tests}}
         {{#if showTests}}
             <link rel="stylesheet" href="/vendor/mocha.css">
         {{/if}}
-
-        <script src="http://code.jquery.com/jquery-2.0.2.min.js"></script>
+        <script src="//code.jquery.com/jquery-2.0.2.min.js"></script>
     </head>
-    <body>
+    <body style="background-color:black; color:white">
         <header><a href="/"><img src="/img/logo.png" alt="Meadowlark Travel Logo"></a></header>
-
-        {{!handlebars context code}}
+        <h2>The NEW Meadowlark Travel site</h2>
         {{{body}}}
-        {{{_sections.jquery}}}
 
-        {{!Sets up the mocha tests}}
         {{#if showTests}}
             <div id="mocha"></div>
             <script src="/vendor/mocha.js"></script>
@@ -40,12 +33,6 @@
 
             <script>mocha.run();</script>
         {{/if}}
-
-        <footer>
-            <br>
-            <br>
-            <small>&copy; {{copyrightYear}} Meadowlark Travel</small>
-        </footer>
 
     </body>
 </html>
