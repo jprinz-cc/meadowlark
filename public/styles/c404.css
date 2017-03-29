@@ -1,0 +1,20 @@
+body {
+    background-color: black;
+    color: white;
+}
+
+header {
+    position: fixed;
+    top: 8px;
+}
+
+#center {
+    max-width: 80%;
+    height: auto;
+    display: block;
+    margin: 5% auto;
+}
+
+
+
+

@@ -181,7 +181,9 @@ app.get('/jquery-test', function (req, res){
 // Custom 404 page
 app.use(function (req, res) {
     res.status(404);
-    res.render('404');
+    res.render('404', {
+        layout: 'error'
+    });
 });
 
 
