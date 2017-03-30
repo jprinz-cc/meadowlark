@@ -4,8 +4,10 @@ body {
 }
 
 header {
+/*
     position: fixed;
     top: 8px;
+*/
 }
 
 #center {

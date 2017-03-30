@@ -11,14 +11,45 @@
         {{#if showTests}}
             <link rel="stylesheet" href="/vendor/mocha.css">
         {{/if}}
+        <link rel="stylesheet" href="/vendor/bootstrap/css/bootstrap.min.css" >
+        <link rel="stylesheet" href="/css/main.css">
+        <link rel="stylesheet" href="/vendor/bootstrap/css/bootstrap-theme.min.css">
 
-        <script src="http://code.jquery.com/jquery-2.0.2.min.js"></script>
+        <script src="/vendor/js/modernizr-2.6.2-respond-1.1.0.min.js"></script>
     </head>
     <body>
-        <header><a href="/"><img src="/img/logo.png" alt="Meadowlark Travel Logo"></a></header>
+        <header><a href="../"><img src="/img/logo.png" alt="Meadowlark Travel Logo"></a></header>
+        <nav>
+            <ul style="list-style-type:none">
+                <li><a href="../about">About</a></li>
+                <li>Tours</li>
+                <ul style="list-style-type:none">
+                    <li><a href="../tours/hood-river">Hood-River</a></li>
+                    <li><a href="../tours/oregon-coast">Oregon-Coast</a></li>
+                    <li><a href="../tours/tours-info">Tours Info</a></li>
+                </ul>
+                <li><a href="../jquery-test">jQuery Test</a></li>
+                <li><a href="../health">Health Check</a></li>
+                <li><a href="../nursery-rhyme">Nursery-Rhyme</a></li>
+                <li><a href="../newsletter">Newsletter</a></li>
+                <li><a href="../contest/vacation-photo">Vacation-Photo Upload</a></li>
+            </ul>
+        </nav>
+        <main>
+            {{!handlebars context code}}
+            {{{body}}}
+        </main>
 
-        {{!handlebars context code}}
-        {{{body}}}
+
+        <hr id='noFloat'>
+        <footer>
+            <br>
+            <small>&copy; {{copyrightYear}} Meadowlark Travel</small>
+        </footer>
+
+
+
+        <script>window.jQuery || document.write('<script src="/vendor/js/jquery-2.1.1.min.js"><\/script>')</script>
         {{{_sections.jquery}}}
 
         {{!Sets up the mocha tests}}
@@ -41,11 +72,6 @@
             <script>mocha.run();</script>
         {{/if}}
 
-        <footer>
-            <br>
-            <br>
-            <small>&copy; {{copyrightYear}} Meadowlark Travel</small>
-        </footer>
-
+        <script src="/vendor/bootstrap/js/bootstrap.min.js"></script>
     </body>
 </html>

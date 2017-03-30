@@ -7,13 +7,14 @@ app.disable('x-powered-by');
 
 
 //Requires
-var bodyParser = require('body-parser');
+var bodyParser = require('body-parser'),
+    formidable = require('formidable');
 
 // Custom scripts
-var fortune = require('./lib/fortune.js');
-var dayOfWeek = require('./lib/dayOfWeek.js');
-var copyrightYear = require('./lib/copyrightYear.js');
-var getWeatherData = require('./lib/getWeatherData.js');
+var fortune = require('./lib/fortune.js'),
+    dayOfWeek = require('./lib/dayOfWeek.js'),
+    copyrightYear = require('./lib/copyrightYear.js'),
+    getWeatherData = require('./lib/getWeatherData.js');
 
 
 // set up handlebars view engine
@@ -32,16 +33,14 @@ app.engine('handlebars', handlebars.engine);
 app.set('view engine', 'handlebars');
 
 
-// Global Variables
-var urlEncodedParser = bodyParser.urlencoded({ extended: false });
 
-var date = new Date();
 
 
 
 // Startup
 app.use(express.static(__dirname + '/public'));
 
+app.use(require('body-parser').urlencoded({ extended: true }));
 
 app.use(function (req, res, next) {
     res.locals.showTests = app.get('env') !== 'production' &&
@@ -57,6 +56,9 @@ app.use(function(req, res, next){
 })
 
 
+// Global Variables
+
+var date = new Date();
 
 
 // ##Routes
@@ -125,7 +127,7 @@ app.get('/january-specials', function(req, res){
 });
 
 
-app.post('/process-contact', urlEncodedParser, function(req, res){
+app.post('/process-contact', function(req, res){
 
     var conName = req.body.name;
     var curTime = date.toString();
@@ -158,6 +160,64 @@ app.get('/data/nursery-rhyme', function(req, res){
         bodyPart: 'tail',
         adjective: 'bushy',
         noun: 'heck'
+    });
+});
+
+app.get('/newsletter', function(req, res){
+    // we will learn about CSRF later...for now, we just
+    // provide a dummy value
+    res.render('newsletter', { csrf: 'CSRF token goes here' });
+});
+
+
+app.post('/process', function(req, res){
+    var conName = req.body.name;
+    var curTime = date.toString();
+
+    if(req.xhr || req.accepts('json,html')==='json'){
+        // if there were an error, we would send { error: 'error description' }
+        res.send({ success: true });
+    } else {
+        // if there were an error, we would redirect to an error page
+        console.log('Form (from querystring): ' + req.query.form);
+        console.log('CSRF token (from hidden form field): ' + req.body._csrf);
+        console.log('Name (from visible form field): ' + req.body.name);
+        console.log('Email (from visible form field): ' + req.body.email);
+        res.status(303);
+        res.render('thank-you', {
+            timeStamp: curTime,
+            contactName: conName
+        });
+    }
+});
+
+
+app.get('/contest/vacation-photo',function(req,res){
+    var now = new Date();
+    res.render('contest/vacation-photo',{
+        year: now.getFullYear(),month: now.getMonth()
+    });
+});
+
+
+app.post('/contest/vacation-photo/:year/:month', function(req, res){
+
+    var form = new formidable.IncomingForm();
+
+    form.parse(req, function(err, fields, files){
+        var conName = fields.name;
+        var curTime = date.toString();
+
+        if(err) return res.redirect(303, '/error');
+        console.log('received fields:');
+        console.log(fields);
+        console.log('received files:');
+        console.log(files);
+        res.status(303);
+        res.render('thank-you', {
+            timeStamp: curTime,
+            contactName: conName
+        });
     });
 });
 

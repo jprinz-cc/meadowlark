@@ -1,0 +1,26 @@
+body {
+    padding-bottom: 20px;
+}
+
+header{
+
+}
+
+nav {
+    float: left;
+    margin-right: 30px;
+}
+
+main {
+    width: 80%;
+    float: left;
+    margin-bottom: 30px;
+}
+#noFloat {
+    clear: both;
+}
+
+footer{
+    padding-right: 80px;
+    text-align: right;
+}
