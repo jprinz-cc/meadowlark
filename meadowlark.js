@@ -14,7 +14,8 @@ var bodyParser = require('body-parser'),
 var fortune = require('./lib/fortune.js'),
     dayOfWeek = require('./lib/dayOfWeek.js'),
     copyrightYear = require('./lib/copyrightYear.js'),
-    getWeatherData = require('./lib/getWeatherData.js');
+    getWeatherData = require('./lib/getWeatherData.js'),
+    credentials = require('./credentials.js');
 
 
 // set up handlebars view engine
@@ -42,6 +43,21 @@ app.use(express.static(__dirname + '/public'));
 
 app.use(require('body-parser').urlencoded({ extended: true }));
 
+app.use(require('cookie-parser')(credentials.cookieSecret));
+app.use(require('express-session')({
+    resave: false,
+    saveUninitialized: false,
+    secret: credentials.cookieSecret
+}))
+
+app.use(function(req, res, next){
+    // if there's a flash message, transfer
+    // it to the context, then clear it
+    res.locals.flash = req.session.flash;
+    delete req.session.flash;
+    next();
+})
+
 app.use(function (req, res, next) {
     res.locals.showTests = app.get('env') !== 'production' &&
         req.query.test === '1';
@@ -63,6 +79,10 @@ var date = new Date();
 
 // ##Routes
 app.get('/', function (req, res) {
+
+    res.cookie('monster', 'nom nom');
+    res.cookie('signed_monster', 'nom nom', {signed: true});
+
     res.render('home', {
         dayOfWeek: dayOfWeek.getDayOfWeek()
     });
@@ -77,6 +97,13 @@ app.get('/home', function (req, res) {
 
 
 app.get('/about', function (req, res) {
+
+    var monster = req.cookies.monster;
+    var signedMonster = req.signedCookies.signed_monster;
+
+    console.log('Monster: ' + monster);
+    console.log('SignedMonster: ' + signedMonster);
+
     res.render('about', {
         fortune: fortune.getFortune(),
         pageTestScript: '/qa/tests-about.js'
@@ -142,7 +169,7 @@ app.post('/process-contact', function(req, res){
         timeStamp: curTime,
         contactName: conName
     });
-})
+});
 
 
 app.get('/thank-you', function (req, res){
@@ -167,6 +194,55 @@ app.get('/newsletter', function(req, res){
     // we will learn about CSRF later...for now, we just
     // provide a dummy value
     res.render('newsletter', { csrf: 'CSRF token goes here' });
+});
+
+app.get('/newsletter/archive', function(req, res){
+    res.render('newsletter/archive');
+});
+
+
+function NewsletterSignup() {};
+NewsletterSignup.prototype.save = function (cb) {
+    cb();
+};
+
+
+var VALID_EMAIL_REGEX = new RegExp('^[a-zA-Z0-9.!#$%&\'*+\/=?^_`{|}~-]+@' +
+'[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?' +
+'(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$');
+
+
+app.post('/newsletter', function(req, res){
+
+    var name = req.body.name || '', email = req.body.email || '';
+    //input validation
+    if(!email.match(VALID_EMAIL_REGEX)) {
+        if(req.xhr) return res.json({ error: 'Invalid name email address.'});
+        req.session.flash = {
+            type: 'danger',
+            intro: 'Validation error!',
+            message: 'The email address you entered was not valid.'
+        };
+        return res.redirect(303, '/newsletter/archive');
+    }
+    new NewsletterSignup({name: name, email: email}).save(function(err){
+        if(err) {
+            if(req.xhr) return res.json({ error: 'Database error.'});
+            req.session.flash = {
+                type: 'danger',
+                intro: 'Database error!',
+                message: 'There was a database error; please try again later.'
+            };
+            return res.redirect(303, '/newsletter/archive');
+        }
+        if(req.xhr) return res.json({ success: true});
+        req.session.flash = {
+            type: 'success',
+            intro: 'Thank you!',
+            message: 'You have now been signed up for the newsletter.'
+        };
+        return res.redirect(303, '/newsletter/archive');
+    });
 });
 
 

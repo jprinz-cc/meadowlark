@@ -10,3 +10,4 @@ node_modules
 /bin/
 /obj/
 .ntcs_analysis.dat
+/credentials.js
