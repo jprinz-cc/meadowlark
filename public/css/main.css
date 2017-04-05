@@ -21,6 +21,14 @@ main {
     clear: both;
 }
 
+a.currency {
+    text-decoration: none;
+}
+
+.currency.selected {
+    font-weight: bold;
+    font-size: 150%;
+}
 footer{
     padding-right: 80px;
     text-align: right;

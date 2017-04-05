@@ -8,15 +8,27 @@ app.disable('x-powered-by');
 
 //Requires
 var bodyParser = require('body-parser'),
-    formidable = require('formidable');
+    formidable = require('formidable'),
+    mongoose = require('mongoose');
+
+var MongoSessionStore = require('session-mongoose')(require('connect'));
+
 
 // Custom scripts
 var fortune = require('./lib/fortune.js'),
     dayOfWeek = require('./lib/dayOfWeek.js'),
     copyrightYear = require('./lib/copyrightYear.js'),
     getWeatherData = require('./lib/getWeatherData.js'),
-    credentials = require('./credentials.js');
+    credentials = require('./credentials.js'),
+    Vacation = require('./models/vacation.js'),
+    VacationInSeasonListener = require('./models/vacationInSeasonListener.js');
 
+require('./lib/vacationData.js');
+
+
+var sessionStore = new MongoSessionStore({
+    url: credentials.mongo[app.get('env')].connectionString
+});
 
 // set up handlebars view engine
 var handlebars = require('express-handlebars').create({
@@ -35,20 +47,19 @@ app.set('view engine', 'handlebars');
 
 
 
-
-
-
 // Startup
 app.use(express.static(__dirname + '/public'));
 
 app.use(require('body-parser').urlencoded({ extended: true }));
 
 app.use(require('cookie-parser')(credentials.cookieSecret));
+
 app.use(require('express-session')({
     resave: false,
     saveUninitialized: false,
-    secret: credentials.cookieSecret
-}))
+    secret: credentials.cookieSecret,
+    store: sessionStore
+}));
 
 app.use(function(req, res, next){
     // if there's a flash message, transfer
@@ -56,7 +67,7 @@ app.use(function(req, res, next){
     res.locals.flash = req.session.flash;
     delete req.session.flash;
     next();
-})
+});
 
 app.use(function (req, res, next) {
     res.locals.showTests = app.get('env') !== 'production' &&
@@ -65,23 +76,42 @@ app.use(function (req, res, next) {
 });
 
 
+// MongoDB Config
+var opts = {
+    server: {
+        socketOptions: { keepAlive: 1 }
+    }
+};
+
+// MongoDB Config
+switch(app.get('env')){
+    case 'development':
+        mongoose.connect(credentials.mongo.development.connectionString, opts);
+        break;
+    case 'production':
+        mongoose.connect(credentials.mongo.production.connectionString, opts);
+        break;
+    default:
+        throw new Error('Unknown execution environment: ' + app.get('env'));
+}
+
+
 app.use(function(req, res, next){
     if(!res.locals.partials) res.locals.partials = {};
     res.locals.partials.weatherContext = getWeatherData.getWeatherData();
     next();
-})
+});
 
 
 // Global Variables
-
 var date = new Date();
+
 
 
 // ##Routes
 app.get('/', function (req, res) {
 
-    res.cookie('monster', 'nom nom');
-    res.cookie('signed_monster', 'nom nom', {signed: true});
+    res.cookie('signedMonster', 'nom nom', { signed: true });
 
     res.render('home', {
         dayOfWeek: dayOfWeek.getDayOfWeek()
@@ -98,10 +128,8 @@ app.get('/home', function (req, res) {
 
 app.get('/about', function (req, res) {
 
-    var monster = req.cookies.monster;
-    var signedMonster = req.signedCookies.signed_monster;
+    var signedMonster = req.signedCookies.signedMonster;
 
-    console.log('Monster: ' + monster);
     console.log('SignedMonster: ' + signedMonster);
 
     res.render('about', {
@@ -131,7 +159,7 @@ app.get('/tours/tours-info', function (req, res) {
     res.render('tours/tours-info', {
         currency: {
             name: 'Canadian dollars',
-            abbrev: 'CDN'
+            abbrev: 'CAD'
         },
         tours: [
             {
@@ -144,7 +172,7 @@ app.get('/tours/tours-info', function (req, res) {
             }
         ],
         specialsUrl: '/january-specials',
-        currencies: ['USD', 'CDN', 'BTC']
+        currencies: ['USD', 'CAD', 'BTC']
     });
 });
 
@@ -201,7 +229,7 @@ app.get('/newsletter/archive', function(req, res){
 });
 
 
-function NewsletterSignup() {};
+function NewsletterSignup() {}
 NewsletterSignup.prototype.save = function (cb) {
     cb();
 };
@@ -298,6 +326,80 @@ app.post('/contest/vacation-photo/:year/:month', function(req, res){
 });
 
 
+app.get('/set-currency/:currency', function(req,res){
+    req.session.currency = req.params.currency;
+    return res.redirect(303, '/vacations');
+});
+
+function convertFromUSD(value, currency){
+    switch(currency){
+        case 'USD':
+            return value * 1;
+        case 'CAD':
+            return parseFloat(value * 1.34).toFixed(2);
+        case 'BTC':
+            return value * 0.00089;
+        default: return NaN;
+    }
+}
+
+
+app.get('/vacations', function(req, res){
+    Vacation.find({ available: true }, function(err, vacations){
+        var currency = req.session.currency || 'USD';
+        var context = {
+            currency: currency,
+            vacations: vacations.map(function(vacation){
+                return {
+                    sku: vacation.sku,
+                    name: vacation.name,
+                    description: vacation.description,
+                    inSeason: vacation.inSeason,
+                    price: convertFromUSD(vacation.priceInCents/100, currency),
+                    qty: vacation.qty
+                };
+            })
+        };
+        switch(currency){
+            case 'USD': context.currencyUSD = 'selected'; break;
+            case 'CAD': context.currencyCAD = 'selected'; break;
+            case 'BTC': context.currencyBTC = 'selected'; break;
+        }
+        res.render('vacations', context);
+    });
+});
+
+
+app.get('/notify-me-when-in-season', function(req, res){
+    res.render('notify-me-when-in-season', { sku: req.query.sku });
+});
+
+app.post('/notify-me-when-in-season', function(req, res){
+    VacationInSeasonListener.update(
+        { email: req.body.email },
+        { $push: { skus: req.body.sku } },
+        { upsert: true },
+        function(err){
+            if(err) {
+                console.error(err.stack);
+                req.session.flash = {
+                    type: 'danger',
+                    intro: 'Ooops!',
+                    message: 'There was an error processing your request.'
+                };
+                return res.redirect(303, '/vacations');
+            }
+            req.session.flash = {
+                type: 'success',
+                intro: 'Thank you!',
+                message: 'You will be notified when this vacation is in season.'
+            };
+            return res.redirect(303, '/vacations');
+        }
+    );
+});
+
+
 // Test pages
 // Health check for Openshift
 app.get('/health', function (req, res) {
@@ -314,7 +416,7 @@ app.get('/headers', function (req, res) {
     var s = '';
     for (var name in req.headers) {
         s += name + ': ' + req.headers[name] + '\n';
-    };
+    }
     res.send(s);
 });
 
@@ -322,7 +424,7 @@ app.get('/headers', function (req, res) {
 // jQuery test page
 app.get('/jquery-test', function (req, res){
     res.render('jquery-test');
-})
+});
 
 
 
